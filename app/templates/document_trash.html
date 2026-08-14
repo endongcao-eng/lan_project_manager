@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero mission-hero small-hero">
+  <div>
+    <div class="eyebrow">DOCUMENT RECYCLE BIN</div>
+    <h1>文档回收站</h1>
+    <p>可以恢复误删除的文档，也可以在确认无误后永久删除。</p>
+  </div>
+  <div class="hero-actions">
+    <a class="button secondary" href="/documents">返回在线文档</a>
+  </div>
+</section>
+
+<section class="panel warning">
+  <div class="section-title"><span class="icon-badge warn">!</span><div><h2>回收站说明</h2><p class="muted">恢复文档后，若文档原本绑定了任务，系统会重新将文档正文同步到对应任务正文中。</p></div></div>
+</section>
+
+<section class="panel">
+  <div class="section-title">
+    <span class="icon-badge">♻</span>
+    <div><h2>已删除文档</h2><p class="muted">只能看到并处理自己上传后删除的文档。</p></div>
+  </div>
+  <div class="document-grid">
+    {% for item in doc_cards %}
+    <article class="document-card trash-card">
+      <div class="task-head">
+        <div>
+          <span class="file-type-badge">{{ item.doc.file_type|upper }}</span>
+          <h3>{{ item.doc.title }}</h3>
+        </div>
+        <span class="status todo">已删除</span>
+      </div>
+      <p>{{ item.doc.description or '暂无说明' }}</p>
+      <div class="task-info-strip compact mini-strip">
+        <span>字数：<strong>{{ item.word_count }}</strong></span>
+        <span>版本：<strong>v{{ item.doc.current_version }}</strong></span>
+      </div>
+      <div class="meta-line"><span>绑定任务：{{ item.doc.task_title or '未绑定' }}</span></div>
+      <div class="meta-line"><span>创建：{{ item.doc.creator_name }}</span><span>删除：{{ item.doc.deleted_at }}</span></div>
+      <div class="meta-line"><span>删除者：{{ item.doc.deleter_name or '未知' }}</span></div>
+      {% if item.deletable %}
+      <p class="actions">
+        <form method="post" action="/documents/{{ item.doc.id }}/restore" class="inline-delete-form">
+          <button type="submit" class="button">恢复文档</button>
+        </form>
+        <form method="post" action="/documents/{{ item.doc.id }}/purge" class="inline-delete-form" data-confirm="确认永久删除文档：{{ item.doc.title }}？该操作无法撤销。">
+          <button type="submit" class="button secondary danger-button">永久删除</button>
+        </form>
+      </p>
+      {% endif %}
+    </article>
+    {% else %}
+    <p class="muted empty-state">回收站为空。</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

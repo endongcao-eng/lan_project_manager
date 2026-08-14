@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <div class="section-title"><span class="icon-badge">人</span><div><h1>账号管理</h1></div></div>
+  {% if message %}<div class="alert success">{{ message }}</div>{% endif %}
+  {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+  <p class="actions"><a class="button secondary" href="/students/tasks">查看学生未完成任务</a></p>
+</section>
+
+<section class="panel">
+  <div class="section-title"><span class="icon-badge">师</span><div><h2>创建教师账号</h2></div></div>
+  <form method="post" action="/admin/teachers" class="form inline-form teacher-create-form">
+    <label>姓名（必填）<input name="display_name" required></label>
+    <label>密码<input name="password" type="password" required autocomplete="new-password"></label>
+    <label>再次输入密码<input name="password_confirm" type="password" required autocomplete="new-password"></label>
+    <label>联系方式（手机）<input name="phone" autocomplete="tel"></label>
+    <label>联系方式（邮箱）<input name="email" type="email" autocomplete="email"></label>
+    <button type="submit">创建教师账号</button>
+  </form>
+</section>
+
+<section class="panel">
+  <div class="section-title"><span class="icon-badge">管</span><div><h2>申请创建管理员账号</h2></div></div>
+  <form method="post" action="/admin/requests" class="form inline-form teacher-create-form">
+    <label>姓名（必填）<input name="display_name" required></label>
+    <label>密码<input name="password" type="password" required autocomplete="new-password"></label>
+    <label>再次输入密码<input name="password_confirm" type="password" required autocomplete="new-password"></label>
+    <label>联系方式（手机）<input name="phone" autocomplete="tel"></label>
+    <label>联系方式（邮箱）<input name="email" type="email" autocomplete="email"></label>
+    <button type="submit">提交申请</button>
+  </form>
+</section>
+
+<section class="panel">
+  <div class="section-title"><span class="icon-badge">审</span><div><h2>管理员创建申请</h2></div></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>拟用账号</th><th>姓名</th><th>申请人</th><th>手机</th><th>邮箱</th><th>同意数</th><th>状态</th><th>提交时间</th><th>操作</th></tr></thead>
+      <tbody>
+      {% for item in admin_requests %}
+        <tr>
+          <td>{{ item.username }}</td>
+          <td>{{ item.display_name }}</td>
+          <td>{{ item.applicant_name }}</td>
+          <td>{{ item.phone or '—' }}</td>
+          <td>{{ item.email or '—' }}</td>
+          <td>
+            {{ item.approval_count }} / {{ item.required_approvals }}
+            {% if item.approved_by %}<small class="field-help">{{ item.approved_by }}</small>{% endif %}
+          </td>
+          <td><span class="role-pill">{{ item.status }}</span></td>
+          <td>{{ item.created_at }}</td>
+          <td class="table-actions-cell">
+            {% if item.can_approve %}
+            <form method="post" action="/admin/requests/{{ item.id }}/approve" class="inline-delete-form" data-confirm="确认同意创建管理员账号 {{ item.username }}？">
+              <button type="submit" class="table-action">同意</button>
+            </form>
+            {% elif item.current_admin_approved and item.status == '待审批' %}
+            <span>已同意</span>
+            {% endif %}
+            {% if item.can_withdraw %}
+            <form method="post" action="/admin/requests/{{ item.id }}/withdraw" class="inline-delete-form" data-confirm="确认撤回该管理员创建申请？">
+              <button type="submit" class="link-danger">撤回</button>
+            </form>
+            {% endif %}
+            {% if item.status == '已通过' and item.created_username %}
+            <span>{{ item.created_username }}</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="9">暂无申请</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="section-title"><span class="icon-badge">库</span><div><h2>用户资料库</h2></div></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>登录账号</th><th>姓名</th><th>角色</th><th>学号</th><th>手机</th><th>邮箱</th><th>本月签到</th><th>创建时间</th><th>操作</th></tr></thead>
+      <tbody>
+      {% for u in users %}
+        <tr>
+          <td>{{ u.username }}</td>
+          <td>{{ u.display_name }}</td>
+          <td><span class="role-pill">{{ u.role }}</span></td>
+          <td>{{ u.student_id or '—' }}</td>
+          <td>{{ u.phone or '—' }}</td>
+          <td>{{ u.email or '—' }}</td>
+          <td>{{ u.signin_days }}</td>
+          <td>{{ u.created_at }}</td>
+          <td class="table-actions-cell">
+            <a class="table-action" href="/admin/users/{{ u.id }}/edit">编辑</a>
+            {% if u.role in ['teacher', 'student'] %}
+            <form method="post" action="/admin/users/{{ u.id }}/delete" class="inline-delete-form" data-confirm="确认删除账号：{{ u.display_name }}？关联任务与文档记录会保留，但该账号将无法登录。">
+              <button type="submit" class="link-danger">删除</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

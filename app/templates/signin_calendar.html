@@ -1,0 +1,16 @@
+<div class="signin-calendar-card">
+  <div class="calendar-head">
+    <strong>{{ calendar.year }}年{{ calendar.month }}月签到日历</strong>
+    <span>已签到 {{ calendar.signed_count }} 天</span>
+  </div>
+  <div class="calendar-weekdays">
+    {% for wd in calendar.weekdays %}<span>{{ wd }}</span>{% endfor %}
+  </div>
+  <div class="signin-calendar-grid">
+    {% for _ in calendar.leading_blanks %}<span class="calendar-day blank"></span>{% endfor %}
+    {% for d in calendar.days %}
+    <span class="calendar-day {{ d.state }}" title="{{ d.date }} · {% if d.state == 'signed' %}已签到{% elif d.state == 'missed' %}未签到{% else %}未到日期{% endif %}">{{ d.day }}</span>
+    {% endfor %}
+  </div>
+  <div class="calendar-legend"><span class="dot signed-dot"></span>已签到 <span class="dot missed-dot"></span>未签到 <span class="dot future-dot"></span>未到日期</div>
+</div>

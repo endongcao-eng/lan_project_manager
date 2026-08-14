@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title or '项目进度综合管理系统' }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+  <header class="topbar">
+    <a class="brand" href="/">
+      <span class="brand-orb"></span>
+      <span>
+        <strong>Project Nexus</strong>
+        <small>局域网项目进度综合管理系统</small>
+      </span>
+    </a>
+    {% if user %}
+    <nav class="nav-links">
+      <a href="/">控制台</a>
+      <a href="/templates">模板库</a>
+      <a href="/documents">在线文档</a>
+      <a href="/documents/trash">回收站</a>
+      {% if user.role == 'student' %}
+      <a href="/personal-tasks">个人任务</a>
+      {% endif %}
+      <a href="/ai">AI管家</a>
+      {% if user.role in ['teacher', 'admin'] and not emergency_mode %}
+      <a href="/tasks/new">新建任务</a>
+      <a href="/students/tasks">学生任务观察</a>
+      {% endif %}
+      {% if user.role == 'admin' %}
+      <a href="/admin/users">账号管理</a>
+      {% endif %}
+    </nav>
+    <div class="user-zone">
+      <div class="user-chip">
+        <span class="avatar">{{ user.display_name[:1] }}</span>
+        <span>{{ user.display_name }}<small>{{ user.role }}</small></span>
+      </div>
+      <a class="ghost-link" href="/logout">退出</a>
+    </div>
+    {% else %}
+    {% endif %}
+  </header>
+  <main class="container">
+    {% if emergency_mode %}
+    <section class="panel emergency-banner">
+      <strong>紧急登录只读模式</strong>
+      <span>当前账号只允许查看和签到，无法制定任务、上传文件、编辑文档或执行删除操作。忘记密码的场合，请联系管理员！</span>
+    </section>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  <script src="/static/app.js"></script>
+  {% if show_emergency_alert %}
+  <script>alert('忘记密码的场合，请联系管理员！');</script>
+  {% endif %}
+</body>
+</html>

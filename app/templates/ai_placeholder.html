@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel ai-panel glow-panel">
+  <div class="eyebrow">AI COPILOT · DOCUMENT INSPECTION</div>
+  <h1>AI 管家：文档总结与相似性观察</h1>
+  <p>外部 AI 接口失灵时，系统会自动使用本地抽取式总结</p>
+  <div class="task-info-strip">
+    <span>外部接口：<strong>{{ '已配置' if ai_configured else '未配置' }}</strong></span>
+    <span>模型：<strong>{{ ai_model or '本地抽取式总结' }}</strong></span>
+    <span>分析对象：<strong>{{ doc_cards|length }}</strong> 份文档</span>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="section-title"><span class="icon-badge">AI</span><div><h2>文档 AI 总览</h2><p class="muted">系统可以保存摘要，并基于摘要比较同一个主任务下不同分支任务的文档是否存在主题重合。</p></div></div>
+  <div class="document-grid">
+    {% for item in doc_cards %}
+    <article class="document-card ai-doc-card">
+      <div class="task-head">
+        <div>
+          <span class="file-type-badge">{{ item.doc.file_type|upper }}</span>
+          <h3><a href="/documents/{{ item.doc.id }}/edit">{{ item.doc.title }}</a></h3>
+        </div>
+        <span class="status {{ 'done' if item.doc.ai_summary else 'todo' }}">{{ '已总结' if item.doc.ai_summary else '未总结' }}</span>
+      </div>
+      <p class="muted">绑定任务：{{ item.doc.task_title or '未绑定' }}{% if item.doc.parent_title %} · 主任务：{{ item.doc.parent_title }}{% endif %}</p>
+      <div class="task-info-strip compact mini-strip">
+        <span>字数：<strong>{{ item.word_count }}</strong></span>
+        <span>创建者：<strong>{{ item.doc.creator_name or '—' }}</strong></span>
+      </div>
+      {% if item.doc.ai_summary %}
+      <article class="content-box ai-summary-mini">{{ item.doc.ai_summary[:260] }}{% if item.doc.ai_summary|length > 260 %}……{% endif %}</article>
+      <p class="muted">{{ item.doc.ai_summary_provider or '未知方式' }} · {{ item.doc.ai_summary_updated_at or '—' }}</p>
+      {% else %}
+      <p class="muted empty-state">尚未生成总结。</p>
+      {% endif %}
+      {% if item.warnings %}
+      <div class="ai-overlap-list">
+        {% for w in item.warnings[:3] %}
+        <div class="mini-overlap"><span>{{ w.task_title }} / {{ w.title }}</span><strong>{{ w.score }}%</strong></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <div class="actions">
+        <form method="post" action="/documents/{{ item.doc.id }}/ai/summarize"><button type="submit">生成总结</button></form>
+        <a class="button secondary" href="/documents/{{ item.doc.id }}/edit#ai-summary">查看详情</a>
+      </div>
+    </article>
+    {% else %}
+    <p class="muted empty-state">暂无可分析文档。请先在“在线文档”中上传并绑定章节任务。</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

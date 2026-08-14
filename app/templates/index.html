@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero mission-hero">
+  <div>
+    <div class="eyebrow">MISSION CONTROL</div>
+    <h1>{% if user.role in ['teacher','admin'] %}协作项目总控台{% else %}我的任务工作台{% endif %}</h1>
+    <details class="signin-fold">
+      <summary>本月已签到 <strong>{{ signin_count }}</strong> 天 <span>点击查看具体签到日期</span></summary>
+      {% set calendar = signin_calendar %}
+      {% include "signin_calendar.html" %}
+    </details>
+    <p></p>
+  </div>
+  <div class="hero-actions">
+    {% if user.role in ['teacher','admin'] and not emergency_mode %}
+    <a class="button" href="/tasks/new">发布新任务</a>
+    {% endif %}
+    <a class="button secondary" href="/templates">进入模板库</a>
+    <a class="button secondary" href="/documents">在线文档</a>
+    {% if user.role == 'student' %}
+    <a class="button secondary" href="/personal-tasks">个人任务</a>
+    {% endif %}
+    {% if user.role in ['teacher','admin'] %}
+    <a class="button secondary" href="/students/tasks">学生任务观察</a>
+    {% endif %}
+  </div>
+</section>
+
+{% if user.role == 'student' and overdue_popup_tasks %}
+<div class="modal-backdrop" data-overdue-modal>
+  <section class="panel overdue-modal">
+    <div class="section-title"><span class="icon-badge warn">!</span><div><h2>个人任务已过截止日期</h2><p class="muted">请确认这些个人任务是否已经完成。选择“是”会自动改为已完成；选择“稍后处理”只关闭本次提醒。</p></div></div>
+    <div class="overdue-confirm-list">
+      {% for item in overdue_popup_tasks %}
+      <article class="overdue-confirm-item">
+        <div><strong>{{ item.task.title }}</strong><small>开始：{{ item.task.start_date or item.task.created_at[:10] }} · 截止：{{ item.task.due_date }}</small></div>
+        <form method="post" action="/personal-tasks/{{ item.task.id }}/complete-from-popup"><button type="submit" class="button">是，已完成</button></form>
+      </article>
+      {% endfor %}
+    </div>
+    <button type="button" class="button secondary" data-close-overdue-modal>稍后处理</button>
+  </section>
+</div>
+{% endif %}
+
+<details class="panel fold-section">
+  <summary class="fold-summary">
+    <div class="section-title"><span class="icon-badge">数</span><div><h2>数据概览</h2><p class="muted">展开查看任务、进度、文档与逾期情况。</p></div></div>
+  </summary>
+  <div class="fold-content metric-grid inside-fold-grid">
+    <article class="metric-card"><span>任务总数</span><strong>{{ stats.total_tasks }}</strong><small>当前视图内全部节点</small></article>
+    <article class="metric-card"><span>已完成</span><strong>{{ stats.done_tasks }}</strong><small>达到完成条件的任务</small></article>
+    <article class="metric-card"><span>平均进度</span><strong>{{ stats.avg_progress }}%</strong><small>字数或周区块综合估算</small></article>
+    <article class="metric-card"><span>在线文档</span><strong>{{ stats.document_count }}</strong><small>已纳入系统管理</small></article>
+    <article class="metric-card danger-metric"><span>逾期未完成</span><strong>{{ stats.overdue_tasks }}</strong><small>需要优先处理</small></article>
+  </div>
+</details>
+
+{% if reminders %}
+<details class="panel warning fold-section">
+  <summary class="fold-summary">
+    <div class="section-title"><span class="icon-badge warn">!</span><div><h2>今日未完成提醒</h2><p class="muted">展开查看临近截止或进度偏低的任务。</p></div></div>
+  </summary>
+  <div class="fold-content reminder-list">
+    {% for item in reminders[:8] %}
+      <a href="/tasks/{{ item.task.id }}" class="reminder-item">
+        <span>{{ item.task.title }}</span>
+        <strong>{{ item.progress.percent }}%</strong>
+      </a>
+    {% endfor %}
+  </div>
+</details>
+{% endif %}
+
+{% if user.role == 'student' and personal_reminders %}
+<details class="panel warning fold-section">
+  <summary class="fold-summary">
+    <div class="section-title"><span class="icon-badge warn">自</span><div><h2>个人任务提醒</h2><p class="muted">展开查看当前所有未完成任务与逾期任务</p></div></div>
+  </summary>
+  <div class="fold-content reminder-list">
+    {% for item in personal_reminders[:8] %}
+      <a href="/personal-tasks" class="reminder-item">
+        <span>{{ item.task.title }} · {{ item.frequency_label }}</span>
+        <strong>{{ '已逾期' if item.is_overdue else (item.task.due_date or '未设期限') }}</strong>
+      </a>
+    {% endfor %}
+  </div>
+</details>
+{% endif %}
+
+<details class="panel fold-section">
+  <summary class="fold-summary">
+    <div class="section-title"><span class="icon-badge">▦</span><div><h2>{% if user.role in ['teacher','admin'] %}全部任务网络{% else %}已完成任务{% endif %}</h2><p class="muted"></p></div></div>
+  </summary>
+  <div class="fold-content task-grid">
+    {% for item in task_cards %}
+    <article class="task-card {% if item.task.parent_id is none %}root-task{% endif %}">
+      <div class="task-head">
+        <h3><a href="/tasks/{{ item.task.id }}">{{ item.task.title }}</a></h3>
+        <span class="status {{ 'done' if item.task.status == '已完成' else 'todo' }}">{{ item.task.status }}</span>
+      </div>
+      <p>{{ item.task.description or '暂无描述' }}</p>
+      <div class="meta-line"><span>负责人：{{ item.task.assigned_name or '未分配' }}</span><span>截止：{{ item.task.due_date or '未设置' }}</span></div>
+      <div class="progress"><span style="width: {{ item.progress.percent }}%"></span></div>
+      {% if item.progress.mode == 'block' %}
+      <div class="meta-line"><span>周区块记录：{{ item.progress.record_count }} / {{ item.progress.blocks_total }}</span><strong>{{ item.progress.percent }}%</strong></div>
+      {% else %}
+      <div class="meta-line"><span>{{ item.progress.words }} / {{ item.progress.target }} 字</span><strong>{{ item.progress.percent }}%</strong></div>
+      {% endif %}
+    </article>
+    {% else %}
+    <p class="muted">暂无任务。</p>
+    {% endfor %}
+  </div>
+</details>
+{% endblock %}

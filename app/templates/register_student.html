@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="login-shell">
+  <div class="login-visual panel glow-panel">
+    <div class="eyebrow">STUDENT · SELF REGISTRATION</div>
+    <h1>创建学生账号</h1>
+    <p>该入口仅用于学生账号注册。教师账号由管理员创建，管理员账号在系统初始阶段预设。</p>
+    <div class="signal-grid">
+      <span>学生身份</span><span>任务接收</span><span>个人计划</span><span>文档协作</span>
+    </div>
+  </div>
+  <section class="login-card panel">
+    <div class="section-title">
+      <span class="icon-badge">＋</span>
+      <div>
+        <h1>学生注册</h1>
+        <p class="muted">注册成功后，可使用学号和密码登录平台。</p>
+      </div>
+    </div>
+    {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+    <form method="post" action="/register" class="form">
+      <label>姓名（必填）<input name="display_name" required value="{{ values.display_name or '' }}" autocomplete="name"></label>
+      <label>学号（必填）<input name="student_id" required value="{{ values.student_id or '' }}" autocomplete="username"></label>
+      <label>密码<input name="password" type="password" required autocomplete="new-password"></label>
+      <label>再次输入密码<input name="password_confirm" type="password" required autocomplete="new-password"></label>
+      <label>联系方式（手机）<input name="phone" value="{{ values.phone or '' }}" autocomplete="tel"></label>
+      <label>联系方式（邮箱）<input name="email" type="email" value="{{ values.email or '' }}" autocomplete="email"></label>
+      <button type="submit">创建学生账号</button>
+      <a class="button secondary" href="/login">返回登录</a>
+    </form>
+  </section>
+</section>
+{% endblock %}

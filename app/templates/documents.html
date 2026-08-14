@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero mission-hero small-hero">
+  <div>
+    <div class="eyebrow">ONLINE DOCUMENT CENTER</div>
+    <h1>在线文档中心</h1>
+    <p></p>
+  </div>
+  <div class="hero-actions"><a class="button secondary" href="/documents/trash">打开文档回收站</a></div>
+</section>
+
+{% if not emergency_mode %}
+<details class="panel glow-panel fold-section">
+  <summary class="fold-summary">
+    <div class="section-title"><span class="icon-badge">⇧</span><div><h2>上传可在线编辑文档</h2><p class="muted">可上传 docx、txt 或 md，并可绑定到任务。</p></div></div>
+  </summary>
+  <div class="fold-content">
+    <form method="post" action="/documents/upload" enctype="multipart/form-data" class="form document-upload-form">
+      <div class="form-two">
+        <label>文档标题<input name="title" placeholder="例如：第3章 太阳能直接发电技术 初稿"></label>
+        <label>绑定任务
+          <select name="task_id">
+            <option value="">不绑定任务，作为公共项目文档</option>
+            {% for t in available_tasks %}
+            <option value="{{ t.id }}">{{ t.title }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+      <label>说明<input name="description" placeholder="例如：学生一负责，第一轮初稿"></label>
+      <label>文件<input name="file" type="file" accept=".docx,.txt,.md" required></label>
+      <button type="submit">上传并进入在线编辑</button>
+    </form>
+  </div>
+</details>
+{% else %}
+<details class="panel warning fold-section"><summary class="fold-summary"><div class="section-title"><span class="icon-badge warn">!</span><div><h2>紧急登录只读模式</h2><p class="muted">展开查看限制说明。</p></div></div></summary><div class="fold-content"><p class="muted">当前不能上传文档或修改文件。忘记密码的场合，请联系管理员。</p></div></details>
+{% endif %}
+
+<details class="panel fold-section">
+  <summary class="fold-summary">
+    <div class="section-title"><span class="icon-badge">文</span><div><h2>项目文档列表</h2><p class="muted">可查看、编辑已上传的项目文档与相关任务</p></div></div>
+  </summary>
+  <div class="fold-content document-grid">
+    {% for item in doc_cards %}
+    <article class="document-card">
+      <div class="task-head">
+        <div>
+          <span class="file-type-badge">{{ item.doc.file_type|upper }}</span>
+          <h3><a href="/documents/{{ item.doc.id }}/edit">{{ item.doc.title }}</a></h3>
+        </div>
+        <span class="status {{ 'done' if item.editable else 'todo' }}">{{ '可编辑' if item.editable else '只读' }}</span>
+      </div>
+      <p>{{ item.doc.description or '暂无说明' }}</p>
+      <div class="task-info-strip compact mini-strip">
+        <span>字数：<strong>{{ item.word_count }}</strong></span>
+        <span>版本：<strong>v{{ item.doc.current_version }}</strong></span>
+        <span>AI：<strong>{{ '已总结' if item.doc.ai_summary else '未总结' }}</strong></span>
+      </div>
+      <div class="meta-line"><span>绑定任务：{{ item.doc.task_title or '未绑定' }}</span></div>
+      <div class="meta-line"><span>创建：{{ item.doc.creator_name }}</span><span>更新：{{ item.doc.updated_at }}</span></div>
+      <p class="actions">
+        <a class="button" href="/documents/{{ item.doc.id }}/edit">打开编辑器</a>
+        <a class="button secondary" href="/documents/{{ item.doc.id }}/download">下载当前版</a>
+        {% if item.deletable and not emergency_mode %}
+        <form method="post" action="/documents/{{ item.doc.id }}/delete" class="inline-delete-form" data-confirm="确认将文档移入回收站：{{ item.doc.title }}？你之后可以在回收站恢复它。">
+          <button type="submit" class="button secondary danger-button">移入回收站</button>
+        </form>
+        {% endif %}
+      </p>
+    </article>
+    {% else %}
+    <p class="muted empty-state">暂无在线文档。请先上传一份 docx、txt 或 md 文件。</p>
+    {% endfor %}
+  </div>
+</details>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel editor-panel">
+  <div class="section-title">
+    <span class="icon-badge">✎</span>
+    <div>
+      <h1>编辑任务内容</h1>
+      <p class="muted">{{ task.title }}</p>
+    </div>
+  </div>
+  <div class="task-info-strip compact">
+    <span>当前字数：<strong>{{ progress.words }}</strong></span>
+    <span>目标字数：<strong>{{ progress.target }}</strong></span>
+    <span>完成率：<strong>{{ progress.percent }}%</strong></span>
+  </div>
+  <form method="post" action="/tasks/{{ task.id }}/edit" class="form">
+    <label>正文内容<textarea name="content" rows="22" class="editor" placeholder="在这里撰写章节内容。保存后系统会重新计算字数、状态与相似度提醒。">{{ task.content or '' }}</textarea></label>
+    <button type="submit">保存并重新计算进度</button>
+  </form>
+</section>
+{% endblock %}

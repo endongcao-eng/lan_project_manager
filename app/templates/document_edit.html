@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel document-editor-panel glow-panel">
+  <div class="task-head wide">
+    <div>
+      <div class="eyebrow">WEB DOCUMENT EDITOR · v{{ doc.current_version }}</div>
+      <h1>{{ doc.title }}</h1>
+      <p>{{ doc.description or '在线编辑项目文档。保存后会生成历史版本；若绑定任务，则同步任务进度。' }}</p>
+    </div>
+    <span class="status {{ 'done' if editable else 'todo' }}">{{ '可编辑' if editable else '只读' }}</span>
+  </div>
+
+  <div class="task-info-strip">
+    <span>文件类型：<strong>{{ doc.file_type|upper }}</strong></span>
+    <span>绑定任务：<strong>{{ doc.task_title or '未绑定' }}</strong></span>
+    <span>当前字数：<strong>{{ word_count }}</strong></span>
+    <span>最后更新：<strong>{{ doc.updated_at }}</strong></span>
+  </div>
+
+  <div class="editor-toolbar">
+    {% if editable %}
+    <button type="button" class="mini-button" data-editor-action="insert-heading">插入章节标题</button>
+    <button type="button" class="mini-button" data-editor-action="insert-reference">插入参考文献提示</button>
+    <button type="button" class="mini-button" data-editor-action="insert-note">插入待核查标记</button>
+    {% endif %}
+    <span class="muted editor-count" id="liveWordCount">当前估算：{{ word_count }} 字</span>
+  </div>
+
+  <form method="post" action="/documents/{{ doc.id }}/edit" class="form">
+    <label>版本说明<input name="note" placeholder="例如：补充了研究背景，修改第2节逻辑"></label>
+    <label>文档正文
+      <textarea name="content" rows="28" class="editor document-editor" data-count-target="liveWordCount" {% if not editable %}readonly{% endif %}>{{ doc.extracted_text or '' }}</textarea>
+    </label>
+    <div class="actions">
+      {% if editable %}<button type="submit">保存为新版本并同步任务</button>{% endif %}
+      <a class="button secondary" href="/documents/{{ doc.id }}/download">下载当前 docx/txt</a>
+      <a class="button secondary" href="/documents">返回文档中心</a>
+    </div>
+  </form>
+</section>
+
+<section class="panel" id="ai-summary">
+  <div class="section-title">
+    <span class="icon-badge">AI</span>
+    <div><h2>AI 文档总结与同主任务相似性分析</h2><p class="muted">未配置外部 AI 接口时，系统会使用本地抽取式总结；配置接口后，可调用外部模型生成总结。</p></div>
+  </div>
+  <div class="actions">
+    {% if not emergency_mode %}
+    <form method="post" action="/documents/{{ doc.id }}/ai/summarize">
+      <button type="submit">生成 / 刷新文档总结</button>
+    </form>
+    {% endif %}
+    <a class="button secondary" href="/ai">进入 AI 管家总览</a>
+  </div>
+  {% if doc.ai_summary %}
+  <article class="content-box ai-summary-box">{{ doc.ai_summary | replace('\n', '<br>') | safe }}</article>
+  <p class="muted">生成方式：{{ doc.ai_summary_provider or '未知' }}　更新时间：{{ doc.ai_summary_updated_at or '—' }}</p>
+  {% else %}
+  <p class="muted empty-state">当前文档尚未生成总结。</p>
+  {% endif %}
+  {% if ai_warnings %}
+  <div class="reminder-list ai-warning-list">
+    {% for w in ai_warnings %}
+    <div class="reminder-item"><span>{{ w.task_title }} · <a href="/documents/{{ w.document_id }}/edit">{{ w.title }}</a></span><strong>总结相似度 {{ w.score }}%</strong></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+
+{% if warnings %}
+<section class="panel warning">
+  <div class="section-title">
+    <span class="icon-badge warn">!</span>
+    <div><h2>绑定任务的相似内容提醒</h2><p class="muted">该文档已同步到任务正文，系统检测到可能与兄弟任务存在内容重合。</p></div>
+  </div>
+  <div class="reminder-list">
+    {% for w in warnings %}
+    <div class="reminder-item"><span>{{ w.title }}</span><strong>相似度 {{ w.score }}%</strong></div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="panel">
+  <div class="section-title">
+    <span class="icon-badge">⟲</span>
+    <div><h2>历史版本</h2><p class="muted">每次保存都会生成一个可下载版本，便于回滚和保留修改痕迹。</p></div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>版本</th><th>保存者</th><th>保存时间</th><th>字数</th><th>说明</th><th>操作</th></tr></thead>
+      <tbody>
+      {% for v in versions %}
+      <tr>
+        <td>v{{ v.version_no }}</td>
+        <td>{{ v.saver_name }}</td>
+        <td>{{ v.saved_at }}</td>
+        <td>{{ v.word_count }}</td>
+        <td>{{ v.note or '—' }}</td>
+        <td><a class="table-action" href="/documents/{{ doc.id }}/versions/{{ v.id }}/download">下载</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="muted empty-state">暂无历史版本。</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

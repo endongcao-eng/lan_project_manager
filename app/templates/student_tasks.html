@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero mission-hero">
+  <div>
+    <div class="eyebrow">STUDENT TASK RADAR</div>
+    <h1>学生任务观察面板</h1>
+    <p>可查看各个学生当前未完成的分配任务，以及学生自定义任务</p>
+  </div>
+  <div class="hero-actions">
+    <a class="button secondary" href="/">返回控制台</a>
+    {% if user.role == 'admin' %}<a class="button secondary" href="/admin/users">账号管理</a>{% endif %}
+  </div>
+</section>
+
+<section class="panel">
+  <div class="section-title">
+    <span class="icon-badge">雷</span>
+    <div><h2>学生账号列表</h2><p class="muted">点击学生姓名即可展开/折叠。未完成数量包含教师分配任务与学生个人任务</p></div>
+  </div>
+
+  <div class="accordion-list">
+    {% for panel in student_panels %}
+    <details class="student-panel nested-fold">
+      <summary>
+        <div class="student-summary-main">
+          <span class="avatar small-avatar">{{ panel.student.display_name[:1] }}</span>
+          <div>
+            <strong>{{ panel.student.display_name }}</strong>
+            <small>@{{ panel.student.username }}{% if panel.student.student_id %} · 学号 {{ panel.student.student_id }}{% endif %} · 本月签到 {{ panel.student.signin_days }} 天</small>
+          </div>
+        </div>
+        <div class="summary-metrics">
+          <span class="status {{ 'todo' if panel.unfinished_count else 'done' }}">未完成 {{ panel.unfinished_count }}</span>
+          <span class="mini-pill">教师 {{ panel.assigned_count }}</span>
+          <span class="mini-pill">个人 {{ panel.personal_count }}</span>
+        </div>
+      </summary>
+
+      <div class="split-grid">
+        <div class="sub-panel">
+          <div class="section-title compact-title"><span class="icon-badge">师</span><div><h3>教师分配未完成任务</h3><p class="muted">学生不可修改任务设定，只能完成本人被分配的正文或文档内容。</p></div></div>
+          <div class="task-grid compact-grid">
+            {% for item in panel.assigned_cards %}
+            <article class="task-card">
+              <div class="task-head"><h3><a href="/tasks/{{ item.task.id }}">{{ item.task.title }}</a></h3><span class="status todo">{{ item.task.status }}</span></div>
+              <p>{{ item.task.description or '暂无描述' }}</p>
+              <div class="meta-line"><span>截止：{{ item.task.due_date or '未设置' }}</span><strong>{{ item.progress.percent }}%</strong></div>
+              <div class="progress"><span style="width: {{ item.progress.percent }}%"></span></div>
+              {% if item.progress.mode == 'block' %}
+              <div class="meta-line"><span>周区块记录：{{ item.progress.record_count }} / {{ item.progress.blocks_total }}</span><span>任务ID #{{ item.task.id }}</span></div>
+              {% else %}
+              <div class="meta-line"><span>{{ item.progress.words }} / {{ item.progress.target }} 字</span><span>任务ID #{{ item.task.id }}</span></div>
+              {% endif %}
+            </article>
+            {% else %}
+            <p class="muted empty-state">暂无教师分配的未完成任务。</p>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="sub-panel">
+          <div class="section-title compact-title"><span class="icon-badge">自</span><div><h3>学生自定义未完成任务</h3><p class="muted">这些任务由学生本人维护，教师/管理员在此处只做观察。</p></div></div>
+          <div class="personal-mini-list">
+            {% for item in panel.personal_cards %}
+            <article class="personal-mini-card {% if item.is_overdue %}overdue-card{% endif %}">
+              <div class="task-head"><h3>{{ item.task.title }}</h3><span class="status todo">{{ item.frequency_label }}</span></div>
+              <p>{{ item.task.description or '暂无说明' }}</p>
+              <div class="meta-line"><span>截止：{{ item.task.due_date or '未设置' }}</span><strong>{{ '已逾期' if item.is_overdue else item.task.status }}</strong></div>
+            </article>
+            {% else %}
+            <p class="muted empty-state">暂无学生自定义的未完成任务。</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </details>
+    {% else %}
+    <p class="muted empty-state">暂无学生账号。</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

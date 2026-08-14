@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel narrow glow-panel">
+  <div class="section-title"><span class="icon-badge">＋</span><div><h1>发布任务</h1><p class="muted">将总项目拆分成可分配、可追踪、可审核的任务节点。</p></div></div>
+  <form method="post" action="/tasks/new" class="form">
+    <label>任务标题<input name="title" required placeholder="例如：第3章 太阳能直接发电技术"></label>
+    <label>任务说明<textarea name="description" rows="4" placeholder="写清楚章节范围、资料要求、审核标准等。"></textarea></label>
+    <label>父任务
+      <select name="parent_id">
+        <option value="">无，作为主任务</option>
+        {% for t in parent_tasks %}
+        <option value="{{ t.id }}" {% if parent_id == t.id %}selected{% endif %}>{{ t.title }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>分配给
+      <select name="assigned_to">
+        <option value="">暂不分配</option>
+        {% for s in students %}
+        <option value="{{ s.id }}">{{ s.display_name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="form-two">
+      <label>目标字数<input name="target_words" type="number" min="0" value="0"><small class="field-help">填 0 时启用周区块进度记录</small></label>
+      <label>截止日期<input name="due_date" type="date" required data-date-picker></label>
+    </div>
+    <button type="submit">创建任务节点</button>
+  </form>
+</section>
+{% endblock %}

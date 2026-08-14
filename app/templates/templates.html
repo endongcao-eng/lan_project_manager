@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero mission-hero small-hero">
+  <div><div class="eyebrow">DOCUMENT TEMPLATE HUB</div><h1>模板库</h1><p>仅教师或管理员可上传 docx、pptx 等模板；所有登录账号均可下载</p></div>
+</section>
+
+{% if user.role in ['teacher','admin'] %}
+<details class="panel fold-section">
+  <summary class="fold-summary"><div class="section-title"><span class="icon-badge">⇧</span><div><h2>上传模板</h2><p class="muted">可上传新的模板文件。</p></div></div></summary>
+  <div class="fold-content">
+    <form method="post" action="/templates/upload" enctype="multipart/form-data" class="form inline-form upload-form">
+      <label>说明<input name="description" placeholder="例如：哈工大博士论文格式模板"></label>
+      <label>文件<input name="file" type="file" required></label>
+      <button type="submit">上传模板</button>
+    </form>
+  </div>
+</details>
+{% endif %}
+
+<details class="panel fold-section">
+  <summary class="fold-summary"><div class="section-title"><span class="icon-badge">库</span><div><h2>模板文件列表</h2><p class="muted">可查看并下载模板。</p></div></div></summary>
+  <div class="fold-content table-wrap">
+    <table>
+      <thead><tr><th>文件名</th><th>说明</th><th>上传者</th><th>时间</th><th>操作</th></tr></thead>
+      <tbody>
+      {% for f in files %}
+        <tr>
+          <td><span class="file-pill">{{ f.original_name }}</span></td>
+          <td>{{ f.description or '—' }}</td>
+          <td>{{ f.uploader }}</td>
+          <td>{{ f.uploaded_at }}</td>
+          <td><a class="table-action" href="/templates/{{ f.id }}/download">下载</a></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="muted empty-state">暂无模板文件。</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
+{% endblock %}

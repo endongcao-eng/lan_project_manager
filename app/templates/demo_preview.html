@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero mission-hero">
+  <div>
+    <div class="eyebrow">STATIC DEMO</div>
+    <h1>界面 Demo 预览</h1>
+    <p>这个页面用于在正式登录前预览产品风格。压缩包根目录中的 <strong>DEMO_PREVIEW.html</strong> 可以直接双击打开。</p>
+  </div>
+  <a class="button" href="/login">返回登录</a>
+</section>
+<section class="metric-grid">
+  <article class="metric-card"><span>任务总数</span><strong>14</strong><small>主任务 + 子任务</small></article>
+  <article class="metric-card"><span>已完成</span><strong>5</strong><small>自动判定</small></article>
+  <article class="metric-card"><span>平均进度</span><strong>62.4%</strong><small>按字数目标估算</small></article>
+  <article class="metric-card danger-metric"><span>相似提醒</span><strong>2</strong><small>需要人工确认</small></article>
+</section>
+<section class="panel">
+  <div class="section-title"><span class="icon-badge">▦</span><div><h2>任务卡片示例</h2><p class="muted">高科技风格、清晰状态、进度条和负责人信息。</p></div></div>
+  <div class="task-grid">
+    <article class="task-card root-task"><div class="task-head"><h3>太空能源技术概论</h3><span class="status todo">未完成</span></div><p>约 27 万字书稿主任务。</p><div class="meta-line"><span>负责人：指导老师</span><strong>42%</strong></div><div class="progress"><span style="width:42%"></span></div></article>
+    <article class="task-card"><div class="task-head"><h3>第3章 太阳能直接发电技术</h3><span class="status done">已完成</span></div><p>包含光伏与温差发电。</p><div class="meta-line"><span>负责人：学生一</span><strong>100%</strong></div><div class="progress"><span style="width:100%"></span></div></article>
+    <article class="task-card"><div class="task-head"><h3>第9章 智能能流管理技术</h3><span class="status todo">未完成</span></div><p>系统架构、智能调度、电能变换。</p><div class="meta-line"><span>负责人：学生二</span><strong>37%</strong></div><div class="progress"><span style="width:37%"></span></div></article>
+  </div>
+</section>
+{% endblock %}

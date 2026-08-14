@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="login-shell">
+  <div class="login-visual panel glow-panel">
+    <div class="eyebrow">LAN · COLLAB · QUALITY CONTROL</div>
+    <h1>小组协作可视化任务网络</h1>
+    <p></p>
+    <div class="signal-grid">
+      <span>任务树</span><span>在线文档</span><span>版本记录</span><span>重复提醒</span>
+    </div>
+  </div>
+  <section class="login-card panel">
+    <div class="section-title">
+      <span class="icon-badge">↪</span>
+      <div>
+        <h1>登录平台</h1>
+        <p class="muted">登录成功后，系统会自动记录今天的签到。</p>
+      </div>
+    </div>
+    {% if message %}<div class="alert success">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+    <form method="post" action="/login" class="form">
+      <label>用户名<input name="username" required autocomplete="username" placeholder="请输入用户名或学号"></label>
+      <label>密码<input name="password" type="password" required autocomplete="current-password" placeholder="请输入密码"></label>
+      <button type="submit">进入控制台</button>
+      <a class="button secondary" href="/register">创建学生账号</a>
+    </form>
+    <details class="emergency-login-box">
+      <summary>忘记密码？使用紧急登录只读模式</summary>
+      <form method="post" action="/emergency-login" class="form compact-form" data-confirm="紧急登录只能查看内容，不能编辑、上传或删除。确认继续？">
+        <label>用户名或学号<input name="username" required placeholder="请输入用户名或学号"></label>
+        <button type="submit" class="button secondary">紧急登录</button>
+      </form>
+      <p class="muted">紧急登录会自动签到，但无法进行编辑操作。忘记密码的场合，请联系管理员！</p>
+    </details>
+
+  </section>
+</section>
+{% endblock %}

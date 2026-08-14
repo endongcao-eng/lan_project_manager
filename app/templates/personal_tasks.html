@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero mission-hero">
+  <div>
+    <div class="eyebrow">PERSONAL ROUTINE</div>
+    <h1>我的个人任务</h1>
+    <p>1. 可自由制定、删除自己的任务</p>
+    <p>2. 可自行决定制定好的个人任务是否已完成</p>
+    <p>3. 以日常/周常形式创建的个人任务会定期刷新，可自由解除续订</p>
+    <p>4. 需长时间完成的单项任务请以“一次性任务”的形式制定</p>
+  </div>
+  <div class="hero-actions">
+    <a class="button secondary" href="/">返回工作台</a>
+  </div>
+</section>
+
+{% if not emergency_mode %}
+<details class="panel fold-section" {% if error or message %}open{% endif %}>
+  <summary class="fold-summary">
+    <div class="section-title"><span class="icon-badge">＋</span><div><h2>创建个人任务</h2><p class="muted">设置为日常或周常的任务会自动续订</p></div></div>
+  </summary>
+  <div class="fold-content">
+    {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+    {% if message %}<div class="alert success">{{ message }}</div>{% endif %}
+    <form method="post" action="/personal-tasks/new" class="form personal-task-form">
+      <label>任务名称<input name="title" required placeholder="例如：整理今天阅读的参考文献"></label>
+      <label>开始日期<input type="date" value="{{ today }}" readonly></label>
+      <label>周期类型
+        <select name="frequency">
+          <option value="daily">日常</option>
+          <option value="weekly">周常</option>
+          <option value="once">一次性</option>
+        </select>
+      </label>
+      <label>截止日期<input type="date" name="due_date" min="{{ today }}" required data-date-picker></label>
+      <label class="full-row">说明<textarea name="description" rows="3" placeholder="可以写任务标准、提醒内容或备注"></textarea></label>
+      <button type="submit">添加个人任务</button>
+    </form>
+  </div>
+</details>
+{% else %}
+<details class="panel warning fold-section">
+  <summary class="fold-summary"><div class="section-title"><span class="icon-badge warn">!</span><div><h2>紧急登录只读模式</h2><p class="muted">展开查看限制说明。</p></div></div></summary>
+  <div class="fold-content"><p class="muted">当前只能查看个人任务，不能创建、修改或切换完成状态。</p></div>
+</details>
+{% endif %}
+
+<details class="panel fold-section">
+  <summary class="fold-summary">
+    <div class="section-title"><span class="icon-badge">循</span><div><h2>自动续订</h2><p class="muted">可暂停或续订日常/周常任务</p></div></div>
+  </summary>
+  <div class="fold-content">
+    {% if template_cards %}
+    <div class="personal-task-list">
+      {% for item in template_cards %}
+      <article class="task-card auto-rule-card">
+        <div class="task-head">
+          <h3>{{ item.task.title }}</h3>
+          <span class="status {{ 'done' if item.task.auto_renew else 'todo' }}">{{ '自动续订中' if item.task.auto_renew else '已暂停' }}</span>
+        </div>
+        <p>{{ item.task.description or '暂无说明' }}</p>
+        <div class="meta-line"><span>{{ item.frequency_label }}</span><span>开始：{{ item.task.start_date or item.task.created_at[:10] }}</span><span>续订至：{{ item.task.due_date or '未设置' }}</span></div>
+        {% if not emergency_mode %}
+        <div class="actions">
+          {% if item.task.auto_renew %}
+          <form method="post" action="/personal-tasks/{{ item.task.id }}/cancel-renew"><button type="submit" class="button secondary">取消自动续订</button></form>
+          {% else %}
+          <form method="post" action="/personal-tasks/{{ item.task.id }}/resume-renew"><button type="submit" class="button">恢复自动续订</button></form>
+          {% endif %}
+        </div>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted empty-state">暂无自动续订规则。创建“日常”或“周常”个人任务后，会在这里显示。</p>
+    {% endif %}
+  </div>
+</details>
+
+<details class="panel fold-section" id="personal-progress">
+  <summary class="fold-summary">
+    <div class="section-title"><span class="icon-badge">✓</span><div><h2>个人任务清单</h2><p class="muted">可查看、修改、完成或记录个人任务进度。</p></div></div>
+  </summary>
+  <div class="fold-content">
+    <div class="personal-task-list">
+      {% for item in personal_cards %}
+      <details class="student-panel personal-task-row nested-fold">
+        <summary>
+          <div class="student-summary-main">
+            <span class="icon-badge {{ 'warn' if item.is_overdue and item.task.frequency != 'daily' else '' }}">{{ '!' if item.is_overdue and item.task.frequency != 'daily' else '自' }}</span>
+            <div>
+              <strong>{{ item.task.title }}</strong>
+              <small>{{ item.frequency_label }} · 开始：{{ item.task.start_date or item.task.created_at[:10] }} · 截止：{{ item.task.due_date or '未设置' }} · 更新：{{ item.task.updated_at }}</small>
+            </div>
+          </div>
+          <div class="summary-metrics">
+            <span class="status {{ 'done' if item.task.status == '已完成' else 'todo' }}">{{ item.task.status }}</span>
+            {% if item.is_overdue and item.task.frequency != 'daily' %}<span class="mini-pill danger-mini">已逾期</span>{% endif %}
+          </div>
+        </summary>
+        {% if emergency_mode %}
+        <div class="sub-panel task-action-panel">
+          <p class="muted">{{ item.task.description or '暂无说明' }}</p>
+          {% if item.task.completed_at %}<p class="muted">完成时间：{{ item.task.completed_at }}</p>{% endif %}
+        </div>
+        {% else %}
+        <div class="split-grid personal-edit-grid">
+          <form method="post" action="/personal-tasks/{{ item.task.id }}/update" class="form personal-task-form nested-form">
+            <label>任务名称<input name="title" value="{{ item.task.title }}" required></label>
+            <label>周期类型
+              <select name="frequency">
+                <option value="daily" {% if item.task.frequency == 'daily' %}selected{% endif %}>日常</option>
+                <option value="weekly" {% if item.task.frequency == 'weekly' %}selected{% endif %}>周常</option>
+                <option value="once" {% if item.task.frequency == 'once' %}selected{% endif %}>一次性</option>
+              </select>
+            </label>
+            <label>开始日期<input type="date" value="{{ item.task.start_date or item.task.created_at[:10] }}" readonly></label>
+            <label>截止日期<input type="date" name="due_date" value="{{ item.task.due_date or '' }}" min="{{ item.task.start_date or item.task.created_at[:10] }}" required data-date-picker></label>
+            <label class="full-row">说明<textarea name="description" rows="3">{{ item.task.description or '' }}</textarea></label>
+            <button type="submit">保存修改</button>
+          </form>
+          <div class="sub-panel task-action-panel">
+            <p class="muted">{{ item.task.description or '暂无说明' }}</p>
+            <form method="post" action="/personal-tasks/{{ item.task.id }}/toggle">
+              <button type="submit" class="button">{% if item.task.status == '已完成' %}标记为未完成{% else %}标记为已完成{% endif %}</button>
+            </form>
+            <form method="post" action="/personal-tasks/{{ item.task.id }}/delete" onsubmit="return confirm('确定删除这个个人任务吗？');">
+              <button type="submit" class="button secondary danger-button">删除任务</button>
+            </form>
+            {% if item.task.completed_at %}<p class="muted">完成时间：{{ item.task.completed_at }}</p>{% endif %}
+          </div>
+        </div>
+        {% if item.block_progress.enabled %}
+        <div class="sub-panel milestone-progress-panel">
+          <div class="section-title">
+            <span class="icon-badge">节</span>
+            <div>
+              <h3>一次性任务节点进度</h3>
+              <p class="muted">系统按开始日期到截止日期的天数建立进度条，每 7 天开放一次“本周进展”。未来节点只显示预告，不能提前填写。</p>
+            </div>
+          </div>
+          <div class="progress big"><span style="width: {{ item.block_progress.percent }}%"></span></div>
+          <p class="muted">当前进度：{{ item.block_progress.percent }}% · 总周期 {{ item.block_progress.total_days }} 天 · 已记录 {{ item.block_progress.record_count }} 条</p>
+
+          <div class="milestone-strip">
+            {% for block in item.block_progress.blocks %}
+            <div class="milestone-node {{ 'done-node' if block.recorded else '' }} {{ 'open-node' if block.is_open else '' }} {{ 'future-node' if block.is_future else '' }}" style="left: {{ block.percent_after }}%">
+              <span></span>
+              <small>{{ block.unlock_date }}</small>
+            </div>
+            {% endfor %}
+          </div>
+
+          {% if item.block_progress.current_block %}
+          {% set current_block = item.block_progress.current_block %}
+          <article class="block-card current-block active-report-card">
+            <div class="task-head">
+              <h3>本周进展：{{ current_block.label }}</h3>
+              <span class="mini-pill ok-mini">填写期：{{ current_block.unlock_date }} ～ {{ current_block.report_until }}</span>
+            </div>
+            {% if current_block.recorded %}
+            <div class="record-list">
+              {% for record in current_block.records %}
+              <div class="record-item">
+                <strong>{{ record.created_at }}</strong>
+                <p>{{ record.note }}</p>
+                {% if record.stored_name %}<a href="/progress-records/{{ record.id }}/download" class="mini-button">下载附件：{{ record.original_name }}</a>{% endif %}
+              </div>
+              {% endfor %}
+            </div>
+            <p class="muted">该节点已经保存过进展记录。进度已推进到 {{ current_block.percent_after }}%。</p>
+            {% else %}
+            <form method="post" action="/personal-tasks/{{ item.task.id }}/progress-records/new" enctype="multipart/form-data" class="form compact-form">
+              <input type="hidden" name="block_index" value="{{ current_block.index }}">
+              <label>本周进展（必填）<textarea name="note" rows="4" required placeholder="记录过去一周实际完成的阅读、实验、写作、修改、讨论或资料整理情况"></textarea></label>
+              <label>附件（选填）<input type="file" name="file"></label>
+              <button type="submit">保存本周进展</button>
+            </form>
+            {% endif %}
+          </article>
+          {% elif item.block_progress.next_block %}
+          <div class="sub-panel locked-report-card">
+            <strong>下一次进展记录将在 {{ item.block_progress.next_block.unlock_date }} 开放。</strong>
+            <p class="muted">开放后可填写至 {{ item.block_progress.next_block.report_until }}。现在暂不能提前填写未来进展。</p>
+          </div>
+          {% else %}
+          <div class="sub-panel locked-report-card">
+            <strong>当前没有可填写的进展节点。</strong>
+            <p class="muted">如果任务已过截止日期且仍未完成，可以在任务状态中手动标记，或联系老师/管理员说明情况。</p>
+          </div>
+          {% endif %}
+
+          <details class="sub-fold">
+            <summary>查看历史节点与未来节点预览</summary>
+            <div class="block-progress-grid compact-history-grid">
+              {% for block in item.block_progress.visible_blocks %}
+              <article class="block-card {{ 'done-block' if block.recorded else '' }} {{ 'current-block' if block.is_open else '' }} {{ 'locked-block' if block.is_future else '' }}">
+                <div class="task-head">
+                  <h3>{{ block.label }}</h3>
+                  {% if block.recorded %}
+                  <span class="mini-pill ok-mini">已记录 · {{ block.percent_after }}%</span>
+                  {% elif block.is_open %}
+                  <span class="mini-pill ok-mini">当前可填写</span>
+                  {% elif block.is_future %}
+                  <span class="mini-pill">未开放</span>
+                  {% elif block.is_expired %}
+                  <span class="mini-pill danger-mini">已错过</span>
+                  {% else %}
+                  <span class="mini-pill danger-mini">未记录</span>
+                  {% endif %}
+                </div>
+                <p class="muted">节点日期：{{ block.unlock_date }} · 填写期至：{{ block.report_until }} · 保存后进度到 {{ block.percent_after }}%</p>
+                {% for record in block.records %}
+                <div class="record-item">
+                  <strong>{{ record.created_at }}</strong>
+                  <p>{{ record.note }}</p>
+                  {% if record.stored_name %}<a href="/progress-records/{{ record.id }}/download" class="mini-button">下载附件：{{ record.original_name }}</a>{% endif %}
+                </div>
+                {% endfor %}
+              </article>
+              {% endfor %}
+            </div>
+          </details>
+        </div>
+        {% endif %}
+        {% endif %}
+      </details>
+      {% else %}
+      <p class="muted empty-state">还没有个人任务。可以先创建一个“每日阅读文献”或“每周提交进度汇总”。</p>
+      {% endfor %}
+    </div>
+  </div>
+</details>
+{% endblock %}
