@@ -1,6 +1,6 @@
 # Project Nexus 局域网项目进度综合管理系统
 
-本版本基于 `lan_project_manager_safety_signin_emergency.zip` 继续迭代，新增个人任务自动续订、无字数任务周区块进度记录、区块附件上传，以及更便捷的日期选择体验。
+新增个人任务自动续订、无字数任务周区块进度记录、区块附件上传，以及更便捷的日期选择体验。
 
 ## 本版新增功能
 
@@ -154,28 +154,6 @@ http://127.0.0.1:8000
 - 待审批申请可由申请人撤回。
 - 旧版 `admin` 账号会在首次启动新版时迁移为 `Kuiruru`，原关联数据保留。
 
-## 升级说明
-
-如果你从上一版覆盖升级，不要删除已有的 `lan_project_manager.db`。系统启动时会自动补充新增字段：
-
-- `document_files.deleted_at`
-- `document_files.deleted_by`
-- `personal_tasks.start_date`
-- `personal_tasks.is_template`
-- `personal_tasks.auto_renew`
-- `personal_tasks.recurrence_parent_id`
-- `personal_tasks.occurrence_key`
-- `task_progress_records`
-
-旧数据会继续保留，旧个人任务的开始日期会自动根据创建时间补齐。
-
-## 注意
-
-当前在线文档编辑器仍是轻量实现，适合早期协作写作测试。复杂 Word 样式、公式、批注、脚注、目录、Zotero 域代码等高级格式不会完整保留。正式部署阶段建议继续接入 WPS WebOffice、ONLYOFFICE 或 Collabora。
-
-## 本版新增：默认折叠式页面布局
-
-为避免页面栏目过多造成信息拥挤，本版将主要功能区改为默认折叠显示：
 
 - “我的个人任务”初始只显示“创建个人任务”“自动续订规则”“个人任务清单”三个栏目标题；展开后才能创建、修改或记录进度。
 - 控制台、在线文档、模板库、任务详情、账号管理、学生任务观察、AI 管家等页面的主要面板也会默认收起，只保留栏目标题。
